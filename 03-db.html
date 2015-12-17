@@ -3,53 +3,69 @@
   <head>
     <meta charset="utf-8">
     <meta name="generator" content="pandoc">
-    <title>Software Carpentry: From a Spreadsheet to a Database</title>
-    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap.css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap-responsive.css" />
-    <link rel="stylesheet" type="text/css" href="css/swc.css" />
-    <link rel="alternate" type="application/rss+xml" title="Software Carpentry Blog" href="http://software-carpentry.org/feed.xml"/>
-    <meta charset="UTF-8" />
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <title>Software Carpentry: 스프레드쉬트에서 데이터베이스로</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="alternate" type="application/rss+xml" title="Software Carpentry Blog" href="http://software-carpentry.org/feed.xml"/>
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    
+      ga('create', 'UA-59802572-7', 'auto');
+      ga('send', 'pageview');
+    
+    </script>
   </head>
-  <body>
-    <div class="container">
-      <div class="banner">
-        <a href="http://software-carpentry.org" title="Software Carpentry">
-          <img alt="Software Carpentry banner" src="img/software-carpentry-banner.png" />
-        </a>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="http://xwmooc.net" title="xwMOOC">
+          <img alt="xwMOOC banner" src="img/xwMOOC.png" />
+        </a>
       </div>
-      <div class="row-fluid">
-        <div class="span10 offset1">
-          <h1 class="title">From a Spreadsheet to a Database</h1>
-          <h2 class="subtitle">Storing Data in a Database</h2>
-<div id="learning-objectives" class="objectives">
-<h2>Learning Objectives</h2>
+      <article>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">스프레드쉬트에서 데이터베이스로</h1>
+          <h2 class="subtitle">데이터베이스에 데이터 저장</h2>
+<section class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2 id="학습목표"><span class="glyphicon glyphicon-certificate"></span>학습목표</h2>
+</div>
+<div class="panel-body">
 <ul>
-<li>Write a short Python program to create a single-table database by printing SQL statements.</li>
-<li>Explain when and why to use this approach rather than connecting to the database programmatically.</li>
-<li>Explain why inferences drawn from unnormalized data are always approximate.</li>
+<li>짧은 파이썬 프로그램을 저장해서, SQL 문장을 출력하도록 해서 단일 테이블 데이터베이스를 생성한다.</li>
+<li>프로그램 방식으로 데이터베이스에 접속하기 보다 이러한 방식을 언제 왜 사용하는지 설명한다.</li>
+<li>정규화되지 않는 데이터에서 추출된 추정값이 왜 항상 근사적인지 설명한다.</li>
 </ul>
 </div>
-<p>We now have (key, author) pairs. The next step is to put them in a relational database so that we can start asking and answering questions. Our starting point is the final script from the previous topic:</p>
-<pre class="sourceCode python"><code class="sourceCode python"><span class="co"># display-authors-2.py</span>
-<span class="co"># Print (key, author) pairs.</span>
+</section>
+<p>이제 (키값, 저자명) 짝 데이터를 갖게 되었다. 다음 단계는 관계형 데이터베이스에 데이터를 집어넣는 것이다. 그렇게 하면 질의 응답을 할 수 있다. 시작점이 이전 학습과정에서 나온 최종 스크립트는 다음과 같다:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co"># display-authors-2.py</span>
+<span class="co"># (키값, 저자명) 짝을 화면에 출력한다.</span>
 
-<span class="ch">import</span> sys
-<span class="ch">import</span> csv
+<span class="im">import</span> sys
+<span class="im">import</span> csv
 
-raw = <span class="dt">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
-reader = csv.reader(raw);
-<span class="kw">for</span> line in reader:
-    key, authors = line[<span class="dv">0</span>], line[<span class="dv">3</span>]
-    <span class="kw">for</span> auth in authors.split(<span class="st">&#39;; &#39;</span>): <span class="co"># semi-colon plus space instead of semi-colon</span>
-        <span class="dt">print</span> key, auth
-raw.close()</code></pre>
-<p>whose output looks like this:</p>
+raw <span class="op">=</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
+reader <span class="op">=</span> csv.reader(raw)<span class="op">;</span>
+<span class="cf">for</span> line <span class="op">in</span> reader:
+    key, authors <span class="op">=</span> line[<span class="dv">0</span>], line[<span class="dv">3</span>]
+    <span class="cf">for</span> auth <span class="op">in</span> authors.split(<span class="st">&#39;; &#39;</span>): <span class="co"># semi-colon plus space instead of semi-colon</span>
+        <span class="bu">print</span> key, auth
+raw.close()</code></pre></div>
+<p>상기 프로그램 실행결과는 다음과 같다:</p>
 <pre class="output"><code>8SW85SQM McClelland, James L
 85QV9X5F McClelland, J. L.
 85QV9X5F McNaughton, B. L.
@@ -60,69 +76,73 @@ F5DGU3Q4 Cohen, N. J.
 PNGQMCP5 Buciluǎ, Cristian
 PNGQMCP5 Caruana, Rich
 PNGQMCP5 Niculescu-Mizil, Alexandru</code></pre>
-<p>What we <em>want</em> is a series of SQL <code>insert</code> statements:</p>
+<p>이제 <em>원하는</em> 바는 일련의 SQL <code>insert</code> 문장을 삽입하는 것이다:</p>
 <pre class="output"><code>insert into data values(&#39;8SW85SQM&#39;, &#39;McClelland, James L&#39;);
 insert into data values(&#39;85QV9X5F&#39;, &#39;McClelland, J. L.&#39;);
 insert into data values(&#39;85QV9X5F&#39;, &#39;McNaughton, B. L.&#39;);</code></pre>
-<p>so let's modify the program to print this instead:</p>
-<pre class="sourceCode python"><code class="sourceCode python"><span class="co"># convert-1.py</span>
-<span class="co"># Create SQL statements to put (key, author) pairs in a database.</span>
+<p>그래서, 대신에 상기 데이터를 출력하도록 프로그램을 변경하자:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co"># convert-1.py</span>
+<span class="co"># 데이터베이스에 (키값, 저자명) 짝을 집어넣는 SQL 문장을 생성한다.</span>
 
-<span class="ch">import</span> sys
-<span class="ch">import</span> csv
+<span class="im">import</span> sys
+<span class="im">import</span> csv
 
-INSERT = <span class="st">&quot;insert into data values(&#39;</span><span class="ot">{0}</span><span class="st">&#39;, &#39;</span><span class="ot">{1}</span><span class="st">&#39;);&quot;</span>
+INSERT <span class="op">=</span> <span class="st">&quot;insert into data values(&#39;</span><span class="sc">{0}</span><span class="st">&#39;, &#39;</span><span class="sc">{1}</span><span class="st">&#39;);&quot;</span>
 
-raw = <span class="dt">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
-reader = csv.reader(raw);
-<span class="kw">for</span> line in reader:
-    key, authors = line[<span class="dv">0</span>], line[<span class="dv">3</span>]
-    <span class="kw">for</span> auth in authors.split(<span class="st">&#39;; &#39;</span>):
-        <span class="dt">print</span> INSERT.<span class="dt">format</span>(key, auth)
-raw.close()</code></pre>
-<p>The first change is the definition of <code>INSERT</code>, which is the format string for our insertion statements. The second change is that instead of printing the key and author directly, we interpolate those values into <code>INSERT</code> using <code>str.format</code>.</p>
-<div id="cutting-corners" class="callout">
-<h2>Cutting Corners</h2>
-<p>Python and other languages have libraries for interacting with databases, so why are we piping <code>insert</code> statements into SQLite instead? The answer is that it's a simple solution that uses all of the tools we have introduced so far. If we had to do anything more complicated with this data, we would almost certainly <code>import sqlite3</code> and do things the right way.</p>
+raw <span class="op">=</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
+reader <span class="op">=</span> csv.reader(raw)<span class="op">;</span>
+<span class="cf">for</span> line <span class="op">in</span> reader:
+    key, authors <span class="op">=</span> line[<span class="dv">0</span>], line[<span class="dv">3</span>]
+    <span class="cf">for</span> auth <span class="op">in</span> authors.split(<span class="st">&#39;; &#39;</span>):
+        <span class="bu">print</span> INSERT.<span class="bu">format</span>(key, auth)
+raw.close()</code></pre></div>
+<p>첫번째 변경사항이 <code>INSERT</code> 정의로, 삽입 문장에 대한 형식 문자열(format string)이 된다. 두번째 변경사항은 키값과 저자명을 직접적으로 출력하는 대신에, 데이터 값을 <code>str.format</code> 을 사용하는 INSERT` 안으로 삽입하는 것이다.</p>
+<aside class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="절차-생략cutting-corners"><span class="glyphicon glyphicon-pushpin"></span>절차 생략(Cutting Corners)</h2>
 </div>
-<p>This works, but only if by &quot;works&quot; we mean &quot;runs to completion without an obvious error&quot;. Upon closer inspection, there are two problems:</p>
+<div class="panel-body">
+<p>파이썬과 다른 언어는 데이터베이스와 상호작용하는 라이브러리가 있다. 그런데, 왜 <code>insert</code> 문장을 SQLite 안으로 흘려보내지 않는가? 대답은 지금까지 소개한 모든 도구를 사용하는 단순한 해답이 있기 때문이다. 만약 데이터로 좀더 복잡한 어떤 것을 해야한다면, 거의 확실히 <code>import sqlite3</code> 사용해서 올바른 방식으로 수행할 것이다.</p>
+</div>
+</aside>
+<p>잘 동작한다, 하지만 &quot;동작한다&quot;라는 말은 단지 &quot;분명한 오류없이 작업완료가 되도록 동작한다&quot;라는 의미다. 더 가까이 검사하면, 문제가 두가지가 보인다:</p>
 <ol style="list-style-type: decimal">
-<li><p>Nobody is actually creating a database table for us to insert things into.</p></li>
-<li><p>Authors names can contain single quotes.</p></li>
+<li><p>실제로 어떤 누구도 데이터를 삽입하는데 데이터베이스를 생성해주지는 않는다.</p></li>
+<li><p>저자명에 단일 인용부호를 포함할 수 있다.</p></li>
 </ol>
-<p>The first is easy to solve --- we just add this at the start of our program:</p>
-<pre class="sourceCode python"><code class="sourceCode python">CREATE = <span class="st">&#39;create table data(key text not null, author text not null);&#39;</span></code></pre>
-<p>and print it out before printing any of the <code>insert</code> statements. The second problem is trickier: if we interpolate a name like &quot;O'Mear, Fiona&quot; into <code>INSERT</code>, the result will be:</p>
-<pre class="sourceCode python"><code class="sourceCode python"><span class="co">&quot;insert into data values(&#39;RJS8QDC4&#39;, &#39;O&#39;Mear, Fiona&#39;);&quot;</span></code></pre>
-<p>which isn't legal Python. The fix there is simply to use double quotes around our strings instead of single quotes, since people's names can't contain the former. Once we make this change, our whole program is:</p>
-<pre class="sourceCode python"><code class="sourceCode python"><span class="co"># convert-2.py</span>
-<span class="co"># Create database of keys and authors.</span>
+<p>첫번째 문제는 풀기 쉽다 -- 프로그램 시작부분에 다음 코드를 추가한다.</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python">CREATE <span class="op">=</span> <span class="st">&#39;create table data(key text not null, author text not null);&#39;</span></code></pre></div>
+<p>어떤 <code>insert</code> 문장을 출력하기 전에 출력한다. 두번째 문제는 더 까다롭다: 만약 &quot;O'Mear, Fiona&quot; 같은 저자명을 <code>INSERT</code>해서 끼워넣으려면, 결과가 다음과 같이 된다:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co">&quot;insert into data values(&#39;RJS8QDC4&#39;, &#39;O&#39;Mear, Fiona&#39;);&quot;</span></code></pre></div>
+<p>상기 방식은 적법한 파이썬 방법이 아니다. 문제 해결방식은 단일 인용부호 대신에 문자열 주위를 이중 인용부호를 사용하는 것이다. 왜냐하면 사람 이름에 이중 인용부호는 포함될 수 없기 때문이다. 변경사항을 마치고 나면, 전체 프로그램은 다음과 같다:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co"># convert-2.py</span>
+<span class="co"># 키값과 저자명에 대한 데이터베이스 생성.</span>
 
-<span class="ch">import</span> sys
-<span class="ch">import</span> csv
+<span class="im">import</span> sys
+<span class="im">import</span> csv
 
-CREATE = <span class="st">&#39;create table data(key text not null, author text not null);&#39;</span>
-INSERT = <span class="st">&#39;insert into data values(&quot;</span><span class="ot">{0}</span><span class="st">&quot;, &quot;</span><span class="ot">{1}</span><span class="st">&quot;);&#39;</span>
+CREATE <span class="op">=</span> <span class="st">&#39;create table data(key text not null, author text not null);&#39;</span>
+INSERT <span class="op">=</span> <span class="st">&#39;insert into data values(&quot;</span><span class="sc">{0}</span><span class="st">&quot;, &quot;</span><span class="sc">{1}</span><span class="st">&quot;);&#39;</span>
 
-<span class="dt">print</span> CREATE
+<span class="bu">print</span> CREATE
 
-raw = <span class="dt">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
-reader = csv.reader(raw);
-<span class="kw">for</span> line in reader:
-    key, authors = line[<span class="dv">0</span>], line[<span class="dv">3</span>]
-    <span class="kw">for</span> auth in authors.split(<span class="st">&#39;; &#39;</span>):
-        <span class="dt">print</span> INSERT.<span class="dt">format</span>(key, auth)
-raw.close()</code></pre>
-<p>Let's run it:</p>
+raw <span class="op">=</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
+reader <span class="op">=</span> csv.reader(raw)<span class="op">;</span>
+<span class="cf">for</span> line <span class="op">in</span> reader:
+    key, authors <span class="op">=</span> line[<span class="dv">0</span>], line[<span class="dv">3</span>]
+    <span class="cf">for</span> auth <span class="op">in</span> authors.split(<span class="st">&#39;; &#39;</span>):
+        <span class="bu">print</span> INSERT.<span class="bu">format</span>(key, auth)
+raw.close()</code></pre></div>
+<p>프로그램을 실행해보자:</p>
 <pre class="input"><code>$ python code/convert-2.py data/bibliography.csv | head -5
 create table data(key text not null, author text not null);
 insert into data values(&quot;8SW85SQM&quot;, &quot;McClelland, James L&quot;);
 insert into data values(&quot;85QV9X5F&quot;, &quot;McClelland, J. L.&quot;);
 insert into data values(&quot;85QV9X5F&quot;, &quot;McNaughton, B. L.&quot;);
 insert into data values(&quot;85QV9X5F&quot;, &quot;O&#39;Reilly, R. C.&quot;);</code></pre>
-<p>That looks pretty good, so let's use it to create an actual database:</p>
+<p>결과가 상당히 좋아 보인다. 그래서, 실제 데이터베이스를 생성하는데 이것을 사용하기로 한다:</p>
 <pre class="input"><code>$ python code/convert-2.py data/bibliography.csv | sqlite3 bibliography.db</code></pre>
-<p>This pipeline takes about four seconds to run on my laptop, and creates a 205 kbyte file called <code>bibliography.db</code>. Let's have a look at what that database contains:</p>
+<p>상기 파이프라인 작업은 저자 컴퓨터에서 실행하는데 약 4초 걸렸고, 205 킬로바이트 <code>bibliography.db</code> 파일을 생성했다. 데이터베이스가 담고 있는 것을 살펴보자:</p>
 <pre class="input"><code>$ sqlite3 bibliography.db
 SQLite version 3.8.5 2014-08-15 22:37:57
 Enter &quot;.help&quot; for usage hints.
@@ -141,8 +161,8 @@ F5DGU3Q4|Cohen, N. J.
 PNGQMCP5|Buciluǎ, Cristian
 PNGQMCP5|Caruana, Rich
 PNGQMCP5|Niculescu-Mizil, Alexandru</code></pre>
-<p>That looks good, so let's try asking some questions:</p>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> author, <span class="fu">count</span>(*) <span class="kw">from</span> <span class="kw">data</span> <span class="kw">group</span> <span class="kw">by</span> author <span class="kw">order</span> <span class="kw">by</span> <span class="fu">count</span>(*) <span class="kw">desc</span> <span class="kw">limit</span> <span class="dv">10</span>;</code></pre>
+<p>결과가 좋아보인다. 그래서, 질의를 던져보자:</p>
+<div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> author, <span class="fu">count</span>(*) <span class="kw">from</span> <span class="kw">data</span> <span class="kw">group</span> <span class="kw">by</span> author <span class="kw">order</span> <span class="kw">by</span> <span class="fu">count</span>(*) <span class="kw">desc</span> <span class="kw">limit</span> <span class="dv">10</span>;</code></pre></div>
 <pre class="output"><code>Bengio, Yoshua|122
 Bengio, Y.|111
 Hinton, Geoffrey E.|78
@@ -153,13 +173,17 @@ LeCun, Y.|31
 Vincent, Pascal|29
 Jordan, M. I.|27
 Frasconi, P.|25</code></pre>
-<p>The first thing we see is that our work has paid off: we can now find out who the most prolific authors are with a single command. The second thing we see is that we're not done yet: &quot;Bengio, Yoshua&quot; and &quot;Bengio, Y.&quot; are almost certainly the same person, as are &quot;LeCun, Yann&quot; and &quot;LeCun, Y.&quot;. If we really want to know who has written the most papers, we're going to have to reconcile different names for the same person.</p>
-<div id="denormalization-is-the-root-of-much-evil" class="callout">
-<h2>Denormalization is the Root of Much Evil</h2>
-<p>Data is <strong>normalized</strong> if it conforms to a standard and contains no redundancy. Our data is <strong>denormalized</strong> because it represents particular authors in several different ways. We can try to normalize the data using <strong>heuristics</strong> such as, &quot;If the surname matches and the initialized form of the other parts of the name match, it's the same person.&quot; Errors will always creep in, however: in our case, we have no way of knowing whether &quot;Albar, M.&quot; is Mohammd Albar or Michael Albar. Answers based on heuristically normalized data are therefore always approximations of reality. It is crucial in these cases that we record the heuristics we used and the transformations we made so that others (including our future selves) can check our work.</p>
+<p>첫번째로 보이는 것은 프로그램 작업이 성과를 내고 있다는 것이다: 누가 가장 다작하는 저자인지 명령문 하나로 이제는 알아낼 수 있다. 두번째로 보이는 것이 아직 작업을 완수한 것은 아니라는 것이다: &quot;Bengio, Yoshua&quot;와 &quot;Bengio, Y.&quot;는 거의 확실히 동일한 사람이다. 마찬가지로 &quot;LeCun, Yann&quot;와 &quot;LeCun, Y.&quot;도 동일인이다. 정말로 누가 가장 많은 논문을 썼는지 알아내려고 한다면, 동일인에 대한 다른 이름을 맞출 필요가 있다.</p>
+<aside class="callout panel panel-info">
+<div class="panel-heading">
+<h2 id="역정규화denormalization는-많은-악의-뿌리가-된다."><span class="glyphicon glyphicon-pushpin"></span>역정규화(Denormalization)는 많은 악의 뿌리가 된다.</h2>
 </div>
-<p>Instead of normalizing names, let's see what other questions we can answer. Who has co-authored papers with whom?</p>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a.author, b.author <span class="kw">from</span> <span class="kw">data</span> a <span class="kw">join</span> <span class="kw">data</span> b <span class="kw">on</span> a.key=b.key <span class="kw">and</span> a.author &gt; b.author <span class="kw">limit</span> <span class="dv">10</span>;</code></pre>
+<div class="panel-body">
+<p>데이터가 표준을 따르고, 어떤 군더더기도 없다면 <strong>정규화</strong>된 것이다. 예제 데이터는 <strong>역정규화(denormalized)</strong>됐는데, 이유는 특정 저자명이 몇가지 다른 방식으로 표현되었다. <strong>경험적(heuristics, 휴리스틱)</strong>으로 데이터를 정규화할 수 있다. 예를 들어, &quot;만약 성과 다른 이름의 첫부분이 매칭되면, 동일인으로 간주한다.&quot;와 같은 방식이다. 하지만, 오류가 항상 끼어들 여지가 있다: 예제 데이터에서, &quot;Albar, M.&quot;이 Mohammd Albar 혹은 Michael Albar인지 어느 것이 맞는지 알 수가 없다. 따라서, 경헙적으로 정규화된 데이터에 기초한 대답은 항상 현실에 대한 근사다. 이런 경우에 사용한 경험적 방법과 직접적으로 수행한 변환에 대해 기록하는 것이 매우 중요하다. 그렇게 해서 다른 사람(미래의 본인 자신을 포함해서)이 작업한 결과물을 상호검사할 수 있게 한다.</p>
+</div>
+</aside>
+<p>저자명을 정규화하는 대신에, 대답할 수 있는 다른 질문을 살펴보자. 누가 누구와 공동으로 논문을 썼을까?</p>
+<div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a.author, b.author <span class="kw">from</span> <span class="kw">data</span> a <span class="kw">join</span> <span class="kw">data</span> b <span class="kw">on</span> a.key=b.key <span class="kw">and</span> a.author &gt; b.author <span class="kw">limit</span> <span class="dv">10</span>;</code></pre></div>
 <pre class="output"><code>McNaughton, B. L.|McClelland, J. L.
 O&#39;Reilly, R. C.|McClelland, J. L.
 O&#39;Reilly, R. C.|McNaughton, B. L.
@@ -171,12 +195,12 @@ Rigamonti, Roberto|Fua, Pascal
 Rigamonti, Roberto|Lepetit, Vincent
 Sironi, Amos|Fua, Pascal</code></pre>
 <p>(We use <code>a.author &gt; b.author</code> to ensure that each distinct pair of authors only shows up once.) What if we want to know how often different pairs of people have written together?</p>
-<pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a.author, b.author, <span class="fu">count</span>(*)
+<div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a.author, b.author, <span class="fu">count</span>(*)
 <span class="kw">from</span> <span class="kw">data</span> a <span class="kw">join</span> <span class="kw">data</span> b
 <span class="kw">on</span> a.key=b.key <span class="kw">and</span> a.author &gt; b.author
 <span class="kw">group</span> <span class="kw">by</span> a.author, b.author
 <span class="kw">order</span> <span class="kw">by</span> <span class="fu">count</span>(*) <span class="kw">desc</span>
-<span class="kw">limit</span> <span class="dv">10</span>;</code></pre>
+<span class="kw">limit</span> <span class="dv">10</span>;</code></pre></div>
 <pre class="output"><code>Vincent, Pascal|Bengio, Yoshua|27
 Roux, Nicolas Le|Bengio, Yoshua|20
 Delalleau, Olivier|Bengio, Yoshua|19
@@ -187,30 +211,51 @@ Vincent, P.|Bengio, Y.|15
 Chapados, N.|Bengio, Y.|14
 Gori, M.|Frasconi, P.|14
 Salakhutdinov, Ruslan|Hinton, Geoffrey E.|14</code></pre>
-<p>Again, we have a data normalization problem: the pair &quot;Vincent, Pascal&quot; and &quot;Bengio, Yoshua&quot; is almost certainly the same as the pair &quot;Bengio, Y.&quot; and &quot;Bengio, S.&quot;. But that problem would be there even if we were analyzing this data manually, and putting it in a database has made asking new questions so easy that we can do research we otherwise wouldn't have been able to tackle. The final step is to commit our script to Git and celebrate with a nice cup of tea.</p>
-<div id="doing-things-the-right-way" class="challenge">
-<h2>Doing Things the Right Way</h2>
-<p>Rewrite the Python program to use the <code>sqlite3</code> library to create the database instead of <code>print</code> statements.</p>
+<p>다시, 데이터 정규화 문제가 있다: &quot;Vincent, Pascal&quot; 와 &quot;Bengio, Yoshua&quot; 짝은 거의 확실히 &quot;Bengio, Y.&quot; 와 &quot;Bengio, S.&quot; 짝과 같다. 하지만, 해당 문제는 수작업으로 이 데이터를 분석할 때도 있는 것이다. 데이터를 데이터베이스에 넣게 되면, 새로운 질의를 쉽게 할 수 있어, 그렇지 않다면 다룰 수 없었던 연구주제를 다룰 수 있게 한다. 마지막 단계는 작업한 스크립트를 Git에 커밋하고 커피 한잔 하면서 자축할 시간만 남았다.</p>
+<section class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="작업을-올바른-방식으로-수행하기"><span class="glyphicon glyphicon-pencil"></span>작업을 올바른 방식으로 수행하기</h2>
 </div>
-<div id="distinct-pairs" class="challenge">
-<h2>Distinct Pairs</h2>
-<p>Explain why using <code>a.author &gt; b.author</code> ensures that distinct pairs of authors only show up once.</p>
+<div class="panel-body">
+<p><code>print</code> 문장 대신에, <code>sqlite3</code> 라이브러리를 사용해서, 데이터베이스를 생성하도록 파이썬 프로그램을 다시 작성하시오.</p>
 </div>
-<div id="normalization" class="challenge">
-<h2>Normalization</h2>
-<p>Write a function that takes two authors' names as input and returns <code>True</code> if they are probably the same person and <code>False</code> if they do not. Compare your function to your neighbor's: can you find a case where the two would disagree?</p>
+</section>
+<section class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="distinct-pairs"><span class="glyphicon glyphicon-pencil"></span>Distinct Pairs</h2>
 </div>
+<div class="panel-body">
+<p><code>a.author &gt; b.author</code> 을 사용하게 되면 왜 완전히 다른 저자명 짝이 한번만 나타나게 되는지 설명하시오.</p>
+</div>
+</section>
+<section class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="정규화"><span class="glyphicon glyphicon-pencil"></span>정규화</h2>
+</div>
+<div class="panel-body">
+<p>입력값으로 저자명 두명을 받아서 만약 아마도 동일인이면 <code>True</code>를 반환하고 만약 동일인이 아니라면 <code>False</code>를 반환하는 함수를 작성하라. 작성한 함수를 옆사람과 비교하시오: 두명이 불일치하는 사례를 찾을 수 있는가?</p>
+</div>
+</section>
+<section class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="정규화-계속"><span class="glyphicon glyphicon-pencil"></span>정규화 (계속)</h2>
+</div>
+<div class="panel-body">
+<p>이전 도전과제에서 작성한 함수를 사용해서 저자명을 정규화하시오. 작업 결과를 옆사람과 비교하시오: 정확하게 저자명과 동일한 목록을 만들어 냈나요? 만약 그렇지 못하다면, 상응하는 목록을 만들어 냈나요?</p>
+</div>
+</section>
         </div>
       </div>
-      <div class="footer">
-        <a class="label swc-blue-bg" href="mailto:admin@software-carpentry.org">Email</a>
-        <a class="label swc-blue-bg" href="http://github.com/swcarpentry">GitHub</a>
-        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
-        <a class="bugreport label swc-blue-bg" href="mailto:admin@software-carpentry.org?subject=bug%20in%20{{page.path}}">Bug Report</a>
+      </article>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://xwmooc.net">xwMOOC</a>
+        <a class="label swc-blue-bg" href="https://github.com/statkclee/raspberry-pi">Source</a>
+        <a class="label swc-blue-bg" href="mailto:i@xwmooc.net">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
       </div>
     </div>
-    <!-- Javascript placed at the end of the document so the pages load faster -->
-    <script src="http://software-carpentry.org/v5/js/jquery-1.9.1.min.js"></script>
-    <script src="http://software-carpentry.org/v5/js/bootstrap/bootstrap.min.js"></script>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="http://software-carpentry.org/v5/js/jquery-1.9.1.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
   </body>
 </html>
