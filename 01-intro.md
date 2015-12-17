@@ -1,42 +1,38 @@
 ---
 layout: page
-title: From a Spreadsheet to a Database
-subtitle: Introduction
+title: 스프레드쉬트에서 데이터베이스로
+subtitle: 들어가며
 minutes: 2
 ---
-> ## Learning Objectives
+> ## 학습목표 {.objectives}
 >
-> * Explain why the initial spreadsheet is hard to work with.
-> * Explain the advantages of a single-table database.
+> * 초기 스프레드쉬트가 작업하기 어려운지 설명한다.
+> * 단일 테이블로 된 데이터베이스로 작업하는 장점을 설명한다.
 
-Our starting point is a spreadsheet called `bibliography.csv`
-with 2937 rows like this:
+출발점은 다음과 같은 2,937행을 갖는 `bibliography.csv` 라는 스프레드쉬트다:
 
-|key     |type       |year|authors                                                                                           |title             |journal                                             |
-|--------|-----------|----|--------------------------------------------------------------------------------------------------|------------------|----------------------------------------------------|
+|key|type|year|authors  |title                                        |journal|
+|---|----|----|--------|---------------------------------------|--------|
 |8SW85SQM|journalArticle|2013|McClelland, James L|Incorporating Rapid Neocortical Learning of New Schema-Consistent Information Into Complementary Learning Systems Theory.|J Exp Psychol Gen|
 |85QV9X5F|journalArticle|1995|McClelland, J. L.; McNaughton, B. L.; O'Reilly, R. C.|Why There are Complementary Learning Systems in the Hippocampus and Neocortex: Insights from the Successes and Failures of Connectionist Models of Learning and Memory|Psychological Review|
 |Z4X6DT6N|journalArticle|1990|Ratcliff, R.|Connectionist models of recognition memory: constraints imposed by learning and forgetting functions.|Psychological review|
 
-We'd like to know:
+다음을 알고자 한다:
 
-*   How many papers has each person contributed to?
+*   사람 각각이 얼마나 많은 논문을 기여했는가?
 
-*   Who collaborates with whom?
+*   누가 누구와 협업을 하는가?
 
-If we only cared about one author,
-we could search for her name in the spreadsheet to answer the first question,
-then select those rows and manually tally her co-authors to answer the second.
-But doing that for all of the authors one by one would take days,
-we'd almost certainly make mistakes,
-and then someone would almost certainly hand us another, larger spreadsheet
-and we'd have to start over.
+만약 저자 한명만 관심있다면, 첫번째 질문에 답하는데 스프레드쉬트에서 저자명을 검색할 수 있다.
+그리고 나서, 저자가 포함된 행을 선택하고 수작업으로 두번째 질문에 답하는데 공동저자를 계수하면 된다.
+하지만, 모든 저자에 대해 하나씩 이런 작업을 수행하는 것은 몇일이 소요된다.
+거의 확실히 실수도 할 것이다. 그리고 나면, 누군가 거의 확실히 또다른 더 큰 스프레드쉬트를 건네줄 것이고,
+다시 작업을 반복해서 시작해야만 된다.
 
-Here's what we're going to do instead:
+대안으로, 우리가 하려는 것이 다음에 나와있다:
 
-1.  Write a little Python program to print (key, author) pairs for every contributor to every paper.
-    For example,
-    this program will turn the first three rows of the spreadsheet into:
+1.  모든 논문에 모든 기여자에 대한 짝(키값, 저자)을 출력하는 작은 파이썬 프로그램을 작성한다.
+    예를 들어, 작성한 프로그램이 스프레드쉬트 첫 세줄을 다음과 같이 변환한다:
 
     ~~~
     8SW85SQM McClelland, James L
@@ -46,49 +42,36 @@ Here's what we're going to do instead:
     Z4X6DT6N Ratcliff, R.
     ~~~
 
-2.  Modify this program to create SQL `insert` statements
-    to put keys and authors into a database.
+2.  프로그램을 변경해서 데이터베이스에 키값과 저자를 삽입하는 SQL `insert` 문장을 생성한다.
 
-3.  Use SQL queries to answer our original questions.
+3.  SQL 쿼리를 사용해서 최초 질문에 답한다.
 
-This might seem like a lot of work to answer two questions,
-but for anything more than a half-dozen rows,
-it will save us a lot of time:
+이렇게 프로그램을 작성하는 것이 질문 두개에 대한 답을 구하는데 상당한 작업처럼 보인다. 
+하지만, 6줄 이상되는 어떤 스프레드쉬트에 대해서도, 상당한 시간을 절약해 준다:
 
-*   Once the data is in a database,
-    it will be easy to ask and answer many other questions.
+*   데이터가 데이터베이스에 있으면, 다양하게 많은 질문에 묻고 답하기 쉽다.
 
-*   We'll be able to re-use our tools on the next spreadsheet we're given.
+*   다음번에 주어지는 스프레드쉬트에 작성한 도구를 재사용할 수 있다.
 
-*   We'll have a record of what we did
-    (something that clicking in a spreadsheet won't give us).
+*   작업한 것에 대한 기록이 있다. (스프레드쉬트를 클릭하면 기록이 없다.)
 
-*   It's more likely to be correct.
+*   더 정확할 것이다.
 
-> ## What Are the Odds? {.challenge}
+> ## 확률이 얼마나될까? {.challenge}
 >
-> The spreadsheet contains 2937 rows.
-> How accurate does manual transcription have to be
-> for us to have a 99% chance of getting the whole analysis right?
-> I.e., what error-per-row rate gives us a 0.99 probability
-> completing the entire task correctly?
+> 스프레드쉬트는 2,937행을 담고 있다.
+> 전체 분석작업의 99%를 틀리지 않게 하는데, 손으로하는 전사작업은 얼마나 정확성이 있을까?
+> 즉, 행당 오류율이 얼마나 되어야 전체 작업을 올바르게 완수하는데 0.99 확률이 될까?
 
-> ## Breaking Even {.challenge}
+> ## 손익분기점 {.challenge}
 >
-> If it takes 10 minutes to write a program to do a task
-> that only takes 5 minutes to do by hand,
-> the program is only worth writing
-> if the task has to be done more than twice.
-> Similarly,
-> if we only wanted to find out who had co-authored papers with one specific author,
-> and we were sure we would never have any other questions
-> or need to re-do the analysis,
-> manually searching the spreadsheet would probably be faster than
-> transcribing the data into a database.
-> 
-> Choose some task that you currently do by hand.
-> Estimate how long it takes you to do it each time,
-> how often you do it,
-> and how long it would take you to write a program to do the task instead.
-> How much time would programming actually save you?
-> How sure are you?
+> 수작업으로 5분만 소요되는 작업을 (전산화해서) 10분 걸려 프로그램 작성한다면,
+> 해당 작업을 두번 이상 수행한다면, 프로그램으로 작성할 가치가 있다.
+> 유사하게, 특정한 저자와 공저자가 누구인지만 알아내려고 하고, 다른 질문은 전혀 없을 것이거나,
+> 반복작업을 할 필요가 없다면, 수작업으로 스프레드쉬트를 검색하는 것이 데이터를 데이터베이스로 옮기는 
+> 프로그램을 작성하는 것보다 아마도 더 빠를 것이다.
+>
+> 현재 수작업으로 하고 있는 작업을 선택하라. 매번 얼마의 시간이 소요되고,
+> 얼마나 자주 수행하는지 추정하고, 대신에 작업을 프로그램으로 만드는데 얼마나 소요되는지 추정하라.
+> 프로그래밍이 실질적으로 얼마나 시간을 절약해줄까?
+> 얼마나 확신이 되나요?

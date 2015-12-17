@@ -1,23 +1,29 @@
 #! /usr/bin/env python
 
-import imp, logging, os, unittest
-check = imp.load_source("check",  # Import non-.py file
-                        os.path.join(os.path.dirname(__file__), "check"))
+"""
+Unit and functional tests for markdown lesson template validator.
+
+Some of these tests require looking for example files, which exist only on
+the gh-pages branch.   Some tests may therefore fail on branch "core".
+"""
+
+import logging
+import os
+import unittest
+
+import check
 
 # Make log messages visible to help audit test failures
 check.start_logging(level=logging.DEBUG)
 
 MARKDOWN_DIR = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), os.pardir))
+    os.path.join(os.path.dirname(__file__), os.pardir))
 
 
 class BaseTemplateTest(unittest.TestCase):
     """Common methods for testing template validators"""
     SAMPLE_FILE = "" # Path to a file that should pass all tests
     VALIDATOR = check.MarkdownValidator
-
-    def setUp(self):
-        self.sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
 
     def _create_validator(self, markdown):
         """Create validator object from markdown string; useful for failures"""
@@ -45,7 +51,8 @@ class TestIndexPage(BaseTemplateTest):
     VALIDATOR = check.IndexPageValidator
 
     def test_sample_file_passes_validation(self):
-        res = self.sample_validator.validate()
+        sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
+        res = sample_validator.validate()
         self.assertTrue(res)
 
     def test_headers_missing_hrs(self):
@@ -53,7 +60,6 @@ class TestIndexPage(BaseTemplateTest):
 
 layout: lesson
 title: Lesson Title
-keywords: ["some", "key terms", "in a list"]
 
 Another section that isn't an HR
 """)
@@ -64,7 +70,6 @@ Another section that isn't an HR
         """One of the required headers is missing"""
         validator = self._create_validator("""---
 layout: lesson
-keywords: ["some", "key terms", "in a list"]
 ---""")
         self.assertFalse(validator._validate_doc_headers())
 
@@ -73,27 +78,47 @@ keywords: ["some", "key terms", "in a list"]
         validator = self._create_validator("""---
 layout: lesson
 title: Lesson Title
-keywords: ["some", "key terms", "in a list"]
 otherline: Nothing
 ---""")
         self.assertFalse(validator._validate_doc_headers())
 
-    def test_headers_fail_because_invalid_content(self):
+    def test_fail_when_headers_not_yaml_dict(self):
+        """Fail when the headers can't be parsed to a dict of YAML data"""
         validator = self._create_validator("""---
-layout: lesson
-title: Lesson Title
-keywords: this is not a list
+This will parse as a string, not a dictionary
 ---""")
         self.assertFalse(validator._validate_doc_headers())
 
     # TESTS INVOLVING SECTION TITLES/HEADINGS
     def test_index_has_valid_section_headings(self):
         """The provided index page"""
-        res = self.sample_validator._validate_section_heading_order()
+        validator = self._create_validator("""## Topics
+
+1.  [Topic Title One](01-one.html)
+2.  [Topic Title Two](02-two.html)
+
+## Other Resources
+
+*   [Motivation](motivation.html)
+*   [Reference Guide](reference.html)
+*   [Next Steps](discussion.html)
+*   [Instructor's Guide](instructors.html)""")
+        res = validator._validate_section_heading_order()
         self.assertTrue(res)
 
     def test_index_fail_when_section_heading_absent(self):
-        res = self.sample_validator.ast.has_section_heading("Fake heading")
+        validator = self._create_validator("""## Topics
+
+1.  [Topic Title One](01-one.html)
+2.  [Topic Title Two](02-two.html)
+
+## Other Resources
+
+*   [Motivation](motivation.html)
+*   [Reference Guide](reference.html)
+*   [Next Steps](discussion.html)
+*   [Instructor's Guide](instructors.html)""")
+        res = validator.ast.has_section_heading("Fake heading")
         self.assertFalse(res)
 
     def test_fail_when_section_heading_is_wrong_level(self):
@@ -122,12 +147,10 @@ Paragraph of introductory material.
 *   [Instructor's Guide](instructors.html)""")
         self.assertFalse(validator._validate_section_heading_order())
 
-
     def test_fail_when_section_headings_in_wrong_order(self):
         validator = self._create_validator("""---
 layout: lesson
 title: Lesson Title
-keywords: ["some", "key terms", "in a list"]
 ---
 Paragraph of introductory material.
 
@@ -154,7 +177,6 @@ Paragraph of introductory material.
         validator = self._create_validator("""---
 layout: lesson
 title: Lesson Title
-keywords: ["some", "key terms", "in a list"]
 ---
 Paragraph of introductory material.
 
@@ -166,27 +188,37 @@ Paragraph of introductory material.
         self.assertTrue(validator._validate_intro_section())
 
     def test_fail_when_prereq_section_has_incorrect_heading_level(self):
-        validator = self._create_validator("""---
-layout: lesson
-title: Lesson Title
-keywords: ["some", "key terms", "in a list"]
----
-Paragraph of introductory material.
-
-> # Prerequisites
+        validator = self._create_validator("""
+> # Prerequisites {.prereq}
 >
 > A short paragraph describing what learners need to know
 > before tackling this lesson.
 """)
-        self.assertFalse(validator._validate_intro_section())
+        self.assertFalse(validator._validate_callouts())
 
     # TESTS INVOLVING LINKS TO OTHER CONTENT
+    def test_should_check_text_of_all_links_in_index(self):
+        """Text of every local-html link in index.md should
+        match dest page title"""
+        validator = self._create_validator("""
+## [This link is in a heading](reference.html)
+[Topic Title One](01-one.html#anchor)""")
+        links = validator.ast.find_external_links()
+        check_text, dont_check_text = validator._partition_links()
+
+        self.assertEqual(len(dont_check_text), 0)
+        self.assertEqual(len(check_text), 2)
+
     def test_file_links_validate(self):
-        res = self.sample_validator._validate_links()
+        """Verify that all links in a sample file validate.
+        Involves checking for example files; may fail on "core" branch"""
+        sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
+        res = sample_validator._validate_links()
         self.assertTrue(res)
 
     def test_html_link_to_extant_md_file_passes(self):
-        """Verify that an HTML link with corresponding MD file will pass"""
+        """Verify that an HTML link with corresponding MD file will pass
+        Involves checking for example files; may fail on "core" branch"""
         validator = self._create_validator("""[Topic Title One](01-one.html)""")
         self.assertTrue(validator._validate_links())
 
@@ -195,6 +227,8 @@ Paragraph of introductory material.
 
         For now this just tests that the regex handles #anchors.
          It doesn't validate that the named anchor exists in the md file
+
+        Involves checking for example files; may fail on "core" branch
         """
         validator = self._create_validator("""[Topic Title One](01-one.html#anchor)""")
         self.assertTrue(validator._validate_links())
@@ -205,7 +239,6 @@ Paragraph of introductory material.
         validator = self._create_validator("""Most databases also support Booleans and date/time values;
 SQLite uses the integers 0 and 1 for the former, and represents the latter as discussed [earlier](#a:dates).""")
         self.assertTrue(validator._validate_links())
-
 
     def test_missing_markdown_file_fails_validation(self):
         """Fail validation when an html file is linked without corresponding
@@ -227,7 +260,8 @@ SQLite uses the integers 0 and 1 for the former, and represents the latter as di
         self.assertFalse(validator._validate_links())
 
     def test_finds_image_asset(self):
-        """Image asset is found"""
+        """Image asset is found in the expected file location
+        Involves checking for example files; may fail on "core" branch"""
         validator = self._create_validator(
             """![this is the image's title](fig/example.svg "this is the image's alt text")""")
         self.assertTrue(validator._validate_links())
@@ -239,7 +273,9 @@ SQLite uses the integers 0 and 1 for the former, and represents the latter as di
         self.assertFalse(validator._validate_links())
 
     def test_non_html_link_finds_csv(self):
-        """Look for CSV file in appropriate folder"""
+        """Look for CSV file in appropriate folder
+        Involves checking for example files; may fail on "core" branch
+        """
         validator = self._create_validator(
             """Use [this CSV](data/data.csv) for the exercise.""")
         self.assertTrue(validator._validate_links())
@@ -250,14 +286,161 @@ SQLite uses the integers 0 and 1 for the former, and represents the latter as di
             """Use [this CSV](data.csv) for the exercise.""")
         self.assertFalse(validator._validate_links())
 
+    ### Tests involving callout/blockquote sections
+    def test_one_prereq_callout_passes(self):
+        """index.md should have one, and only one, prerequisites box"""
+        validator = self._create_validator("""> ## Prerequisites {.prereq}
+>
+> What learners need to know before tackling this lesson.
+""")
+        self.assertTrue(validator._validate_callouts())
+
+    def test_two_prereq_callouts_fail(self):
+        """More than one prereq callout box is not allowed"""
+        validator = self._create_validator("""> ## Prerequisites {.prereq}
+>
+> What learners need to know before tackling this lesson.
+
+A spacer paragraph
+
+> ## Prerequisites {.prereq}
+>
+> A second prerequisites box should cause an error
+""")
+        self.assertFalse(validator._validate_callouts())
+
+    def test_callout_without_style_fails(self):
+        """A callout box will fail if it is missing the required style"""
+        validator = self._create_validator("""> ## Prerequisites
+>
+> What learners need to know before tackling this lesson.
+""")
+        self.assertFalse(validator._validate_callouts())
+
+    def test_callout_with_wrong_title_fails(self):
+        """A callout box will fail if it has the wrong title"""
+        validator = self._create_validator("""> ## Wrong title {.prereq}
+>
+> What learners need to know before tackling this lesson.
+""")
+        self.assertFalse(validator._validate_callouts())
+
+    def test_unknown_callout_style_fails(self):
+        """A callout whose style is unrecognized by template is invalid"""
+        validator = self._create_validator("""> ## Any title {.callout}
+>
+> What learners need to know before tackling this lesson.
+""")
+        callout_node = validator.ast.get_callouts()[0]
+        self.assertFalse(validator._validate_one_callout(callout_node))
+
+    def test_block_ignored_sans_heading(self):
+        """
+        Blockquotes only count as callouts if they have a heading
+        """
+        validator = self._create_validator("""> Prerequisites {.prereq}
+>
+> What learners need to know before tackling this lesson.
+""")
+        callout_nodes = validator.ast.get_callouts()
+        self.assertEqual(len(callout_nodes), 0)
+
+    def test_callout_heading_must_be_l2(self):
+        """Callouts will fail validation if the heading is not level 2"""
+        validator = self._create_validator("""> ### Prerequisites {.prereq}
+>
+> What learners need to know before tackling this lesson.
+""")
+        self.assertFalse(validator._validate_callouts())
+
+    def test_fail_if_fixme_present_all_caps(self):
+        """Validation should fail if a line contains the word FIXME (exact)"""
+        validator = self._create_validator("""Incomplete sentence (FIXME).""")
+        self.assertFalse(validator._validate_no_fixme())
+
+    def test_fail_if_fixme_present_mixed_case(self):
+        """Validation should fail if a line contains the word FIXME
+        (in any capitalization)"""
+        validator = self._create_validator("""Incomplete sentence (FiXmE).""")
+        self.assertFalse(validator._validate_no_fixme())
+
 
 class TestTopicPage(BaseTemplateTest):
     """Verifies that the topic page validator works as expected"""
     SAMPLE_FILE = os.path.join(MARKDOWN_DIR, "01-one.md")
     VALIDATOR = check.TopicPageValidator
 
+    def test_headers_fail_because_invalid_content(self):
+        """The value provided as YAML does not match the expected datatype"""
+        validator = self._create_validator("""---
+layout: lesson
+title: Lesson Title
+subtitle: A page
+minutes: not a number
+---""")
+        self.assertFalse(validator._validate_doc_headers())
+
+    def test_topic_page_should_have_no_headings(self):
+        """Requirement according to spec; may be relaxed in future"""
+        validator = self._create_validator("""
+## Heading that should not be present
+
+Some text""")
+        self.assertFalse(validator._validate_has_no_headings())
+
+    def test_should_not_check_text_of_links_in_topic(self):
+        """Never check that text of local-html links in topic
+        matches dest title """
+        validator = self._create_validator("""
+## [This link is in a heading](reference.html)
+[Topic Title One](01-one.html#anchor)""")
+        links = validator.ast.find_external_links()
+        check_text, dont_check_text = validator._partition_links()
+
+        self.assertEqual(len(dont_check_text), 2)
+        self.assertEqual(len(check_text), 0)
+
+    def test_pass_when_optional_callouts_absent(self):
+        """Optional block titles should be optional"""
+        validator = self._create_validator("""> ## Learning Objectives {.objectives}
+>
+> * All topic pages must have this callout""")
+        self.assertTrue(validator._validate_callouts())
+
+
+    def test_callout_style_passes_regardless_of_title(self):
+        """Verify that certain kinds of callout box can be recognized solely
+        by style, regardless of the heading title"""
+        validator = self._create_validator("""> ## Learning Objectives {.objectives}
+>
+> * All topic pages must have this callout
+
+> ## Some random title {.callout}
+>
+> Some informative text""")
+
+        self.assertTrue(validator._validate_callouts())
+
+    def test_callout_style_allows_duplicates(self):
+        """Multiple blockquoted sections with style 'callout' are allowed"""
+        validator = self._create_validator("""> ## Learning Objectives {.objectives}
+>
+> * All topic pages must have this callout
+
+> ##  Callout box one {.callout}
+>
+> Some informative text
+
+Spacer paragraph
+
+> ## Callout box two {.callout}
+>
+> Further exposition""")
+        self.assertTrue(validator._validate_callouts())
+
     def test_sample_file_passes_validation(self):
-        res = self.sample_validator.validate()
+        sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
+        res = sample_validator.validate()
         self.assertTrue(res)
 
 
@@ -267,7 +450,8 @@ class TestMotivationPage(BaseTemplateTest):
     VALIDATOR = check.MotivationPageValidator
 
     def test_sample_file_passes_validation(self):
-        res = self.sample_validator.validate()
+        sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
+        res = sample_validator.validate()
         self.assertTrue(res)
 
 
@@ -325,8 +509,22 @@ Key Word 2
 """)
         self.assertTrue(validator._validate_glossary())
 
+    def test_callout_fails_when_none_specified(self):
+        """The presence of a callout box should cause validation to fail
+           when the template doesn't define any recognized callouts
+
+           (No "unknown" blockquote sections are allowed)
+           """
+        validator = self._create_validator("""> ## Learning Objectives {.objectives}
+>
+> * Learning objective 1
+> * Learning objective 2""")
+
+        self.assertFalse(validator._validate_callouts())
+
     def test_sample_file_passes_validation(self):
-        res = self.sample_validator.validate()
+        sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
+        res = sample_validator.validate()
         self.assertTrue(res)
 
 
@@ -335,8 +533,31 @@ class TestInstructorPage(BaseTemplateTest):
     SAMPLE_FILE = os.path.join(MARKDOWN_DIR, "instructors.md")
     VALIDATOR = check.InstructorPageValidator
 
+    def test_should_selectively_check_text_of_links_in_topic(self):
+        """Only verify that text of local-html links in topic
+        matches dest title if the link is in a heading"""
+        validator = self._create_validator("""
+## [Reference](reference.html)
+
+[Topic Title One](01-one.html#anchor)""")
+        check_text, dont_check_text = validator._partition_links()
+
+        self.assertEqual(len(dont_check_text), 1)
+        self.assertEqual(len(check_text), 1)
+
+    def test_link_dest_bad_while_text_ignored(self):
+        validator = self._create_validator("""
+[ignored text](nonexistent.html)""")
+        self.assertFalse(validator._validate_links())
+
+    def test_link_dest_good_while_text_ignored(self):
+        validator = self._create_validator("""
+[ignored text](01-one.html)""")
+        self.assertTrue(validator._validate_links())
+
     def test_sample_file_passes_validation(self):
-        res = self.sample_validator.validate()
+        sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
+        res = sample_validator.validate()
         self.assertTrue(res)
 
 
@@ -345,7 +566,8 @@ class TestLicensePage(BaseTemplateTest):
     VALIDATOR = check.LicensePageValidator
 
     def test_sample_file_passes_validation(self):
-        res = self.sample_validator.validate()
+        sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
+        res = sample_validator.validate()
         self.assertTrue(res)
 
     def test_modified_file_fails_validation(self):
@@ -361,7 +583,8 @@ class TestDiscussionPage(BaseTemplateTest):
     VALIDATOR = check.DiscussionPageValidator
 
     def test_sample_file_passes_validation(self):
-        res = self.sample_validator.validate()
+        sample_validator = self.VALIDATOR(self.SAMPLE_FILE)
+        res = sample_validator.validate()
         self.assertTrue(res)
 
 

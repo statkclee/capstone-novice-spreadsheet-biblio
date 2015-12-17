@@ -92,6 +92,8 @@ class CommonMarkHelper(object):
             in index.md
 
         Returns empty list if no appropriate node is found"""
+
+        # TODO: Deprecate in favor of callout validator
         if ast_node is None:
             ast_node = self.data
         return [n for n in ast_node.children
@@ -102,12 +104,43 @@ class CommonMarkHelper(object):
                     heading_level=heading_level,
                     show_msg=False)]
 
+    # Helpers to fetch specific document sections
     def get_section_headings(self, ast_node=None):
         """Returns a list of ast nodes that are headings"""
         if ast_node is None:
             ast_node = self.data
         return [n for n in ast_node.children if self.is_heading(n)]
 
+    def get_callouts(self, ast_node=None):
+        if ast_node is None:
+            ast_node = self.data
+        return [n for n in ast_node.children if self.is_callout(n)]
+
+    def find_external_links(self, ast_node=None, parent_crit=None):
+        """Recursive function that locates all references to external content
+         under specified node. (links or images)"""
+        ast_node = ast_node or self.data
+        if parent_crit is None:
+            # User can optionally provide a function to filter link list
+            # based on where link appears. (eg, only links in headings)
+            # If no filter is provided, accept all links in that node.
+            parent_crit = lambda n: True
+
+        # Link can be node itself, or hiding in inline content
+        links = [n for n in ast_node.inline_content
+                 if self.is_external(n) and parent_crit(ast_node)]
+
+        if self.is_external(ast_node):
+            links.append(ast_node)
+
+        # Also look for links in sub-nodes
+        for n in ast_node.children:
+            links.extend(self.find_external_links(n,
+                                                  parent_crit=parent_crit))
+
+        return links
+
+    # Helpers to get information from a specific node type
     def get_link_info(self, link_node):
         """Given a link node, return the link title and destination"""
         if not self.is_external(link_node):
@@ -121,27 +154,17 @@ class CommonMarkHelper(object):
 
         return dest, link_text
 
-    def find_external_links(self, ast_node=None):
-        """Recursive function that locates all references to external content
-         under specified node. (links or images)"""
-        ast_node = ast_node or self.data
+    def get_heading_info(self, heading_node):
+        """Get heading text and list of all css styles applied"""
+        heading = heading_node.strings[0]
+        text = strip_attrs(heading)
+        css = get_css_class(heading)
+        return text, css
 
-        # Link can be node itself, or hiding in inline content
-        links = [n for n in ast_node.inline_content
-                 if self.is_external(n)]
-
-        if self.is_external(ast_node):
-            links.append(ast_node)
-
-        # Also look for links in sub-nodes
-        for n in ast_node.children:
-            links.extend(self.find_external_links(n))
-
-        return links
-
+    # Functions to query type or content of nodes
     def has_section_heading(self, section_title, ast_node=None,
                             heading_level=2, limit=sys.maxsize, show_msg=True):
-        """Does the file contain (<= x copies of) specified heading text?
+        """Does the section contain (<= x copies of) specified heading text?
         Will strip off any CSS attributes when looking for the section title"""
         if ast_node is None:
             ast_node = self.data
@@ -177,9 +200,15 @@ class CommonMarkHelper(object):
         """Is the node a horizontal rule (hr)?"""
         return ast_node.t == 'HorizontalRule'
 
-    def is_heading(self, ast_node):
+    def is_heading(self, ast_node, heading_level=None):
         """Is the node a heading/ title?"""
-        return ast_node.t == "ATXHeader"
+        has_tag = ast_node.t == "ATXHeader"
+
+        if heading_level is None:
+            has_level = True
+        else:
+            has_level = (ast_node.level == heading_level)
+        return has_tag and has_level
 
     def is_paragraph(self, ast_node):
         """Is the node a paragraph?"""
@@ -200,3 +229,14 @@ class CommonMarkHelper(object):
     def is_block(self, ast_node):
         """Is the node a BlockQuoted element?"""
         return ast_node.t == "BlockQuote"
+
+    def is_callout(self, ast_node):
+        """Composite element: "callout" elements in SWC templates are
+        blockquotes whose first child element is a heading"""
+        if len(ast_node.children) > 0 and \
+                self.is_heading(ast_node.children[0]):
+            has_heading = True
+        else:
+            has_heading = False
+
+        return self.is_block(ast_node) and has_heading
