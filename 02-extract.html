@@ -3,61 +3,77 @@
   <head>
     <meta charset="utf-8">
     <meta name="generator" content="pandoc">
-    <title>Software Carpentry: From a Spreadsheet to a Database</title>
-    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap.css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="css/bootstrap/bootstrap-responsive.css" />
-    <link rel="stylesheet" type="text/css" href="css/swc.css" />
-    <link rel="alternate" type="application/rss+xml" title="Software Carpentry Blog" href="http://software-carpentry.org/feed.xml"/>
-    <meta charset="UTF-8" />
-    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <title>Software Carpentry: 스프레드쉬트에서 데이터베이스로</title>
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap/bootstrap-theme.css" />
+    <link rel="stylesheet" type="text/css" href="css/swc.css" />
+    <link rel="alternate" type="application/rss+xml" title="Software Carpentry Blog" href="http://software-carpentry.org/feed.xml"/>
+    <meta charset="UTF-8" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    
+      ga('create', 'UA-59802572-7', 'auto');
+      ga('send', 'pageview');
+    
+    </script>
   </head>
-  <body>
-    <div class="container">
-      <div class="banner">
-        <a href="http://software-carpentry.org" title="Software Carpentry">
-          <img alt="Software Carpentry banner" src="img/software-carpentry-banner.png" />
-        </a>
+  <body class="lesson">
+    <div class="container card">
+      <div class="banner">
+        <a href="http://xwmooc.net" title="xwMOOC">
+          <img alt="xwMOOC banner" src="img/xwMOOC.png" />
+        </a>
       </div>
-      <div class="row-fluid">
-        <div class="span10 offset1">
-          <h1 class="title">From a Spreadsheet to a Database</h1>
-          <h2 class="subtitle">Extracting Data</h2>
-<div id="learning-objectives" class="objectives">
-<h2>Learning Objectives</h2>
+      <article>
+      <div class="row">
+        <div class="col-md-10 col-md-offset-1">
+          <h1 class="title">스프레드쉬트에서 데이터베이스로</h1>
+          <h2 class="subtitle">데이터 추출</h2>
+<section class="objectives panel panel-warning">
+<div class="panel-heading">
+<h2 id="학습목표"><span class="glyphicon glyphicon-certificate"></span>학습목표</h2>
+</div>
+<div class="panel-body">
 <ul>
-<li>Explain why we call <code>csv.reader</code> a &quot;wrapper&quot;.</li>
-<li>Write a short Python program to extract data from a CSV file.</li>
-<li>Explain the pitfalls of parsing data formats like CSV using string splitting.</li>
-<li>Explain why string splitting is nevertheless an acceptable approach for extracting authors' names from this data.</li>
+<li><code>csv.reader</code>를 왜 &quot;랩퍼(wrapper)&quot;로 부르는지 설명한다.</li>
+<li>짧은 파이썬 프로그램을 작성해서 CSV 파일에서 데이터를 추출한다.</li>
+<li>문자열 쪼개기를 사용해서 CSV같은 데이터 형식 자료를 파싱하는 위험을 설명한다.</li>
+<li>그럼에도 불구하고, 이 데이터에서 저자명을 추출하는데 문자열 쪼개기가 왜 수용가능한 접근법인지 설명한다.</li>
 </ul>
 </div>
-<p>The first step is to turn the rows of the spreadsheet into (key, author) pairs. Let's start by making sure that Python can read the spreadsheet properly:</p>
-<pre class="sourceCode python"><code class="sourceCode python"><span class="co"># count-lines.py</span>
-<span class="co"># Count how many lines there are in the spreadsheet</span>
-<span class="ch">import</span> sys
+</section>
+<p>첫번째 단계는 스프레드쉬트 행을 (키값, 저자명) 짝으로 변환하는 것이다. 파이썬이 올바르게 스프레드쉬트를 읽어들이도록 확인하고서 시작한다:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co"># count-lines.py</span>
+<span class="co"># 스프레드쉬트에 얼마나 많은 줄이 있는지 계수한다.</span>
+<span class="im">import</span> sys
 
-filename = sys.argv[<span class="dv">1</span>]
-reader = <span class="dt">open</span>(filename, <span class="st">&#39;r&#39;</span>)
-count = <span class="dv">0</span>
-<span class="kw">for</span> line in reader:
-    count += <span class="dv">1</span>
+filename <span class="op">=</span> sys.argv[<span class="dv">1</span>]
+reader <span class="op">=</span> <span class="bu">open</span>(filename, <span class="st">&#39;r&#39;</span>)
+count <span class="op">=</span> <span class="dv">0</span>
+<span class="cf">for</span> line <span class="op">in</span> reader:
+    count <span class="op">+=</span> <span class="dv">1</span>
 reader.close()
-<span class="dt">print</span> count</code></pre>
-<p>This should look familiar by now: the filename is given as the first command-line argument (<code>sys.argv[1]</code>), so we open that file and use a <code>for</code> loop to read it line by line. Each time the loop executes, it adds 1 to a variable called <code>count</code>; when the loop finishes, we close the file and print the count.</p>
-<p>We can run this program like this:</p>
+<span class="bu">print</span> count</code></pre></div>
+<p>상기 코드가 이제는 칙숙해보여야 된다: 파일명이 첫번째 명령라인 인자(<code>sys.argv[1]</code>)로 주어졌다. 따라서, 파일을 열고, <code>for</code> 루프를 사용해서 한줄씩 읽어들인다. 매번 루프가 실행될 때, 1을 <code>count</code> 변수에 더한다; 루프가 종류될 때, 파일을 닫고 계수 결과를 출력한다.</p>
+<p>상기 프로그램을 다음과 같이 실행한다:</p>
 <pre class="input"><code>$ python code/count-lines.py data/bibliography.csv</code></pre>
-<p>Sure enough, its output is:</p>
+<p>물론, 결과는 다음과 같다:</p>
 <pre class="output"><code>2937</code></pre>
-<p>so we know that Python is reading all of the rows.</p>
-<p>The next step is to break each line into fields so that we can get each entry's key and authors. The fields are separated by commas, so we could try using <code>str.split</code>. This won't work, though, because authors' names also contain commas (since they are formatted as &quot;last, first&quot;).</p>
-<p>What we can do instead is ask our favorite search engine for help. Sure enough, a search for &quot;python csv&quot; turns up <a href="https://docs.python.org/2/library/csv.html">a library called <code>csv</code></a>, which is part of the standard Python distribution. Its documentation includes a few examples, and after a couple of experiments, we come up with this:</p>
+<p>그래서, 파이썬이 모든 행을 읽어들인 것을 알게된다.</p>
+<p>다음 단계는 각 줄을 필드로 쪼개서 각 항목에 대한 키값과 저자명을 얻게된다. 필드는 콤마로 구분된다. 그래서 <code>str.split</code> 사용해서 시도해볼 수 있다. 하지만, 동작하지는 않는데 이유는 저자명에도 콤마가 포함되어서 그렇다(&quot;성, 이름&quot;같은 형식으로 되어 있어서 그렇다).</p>
+<p>대신에 취할 수 있는 조치는 선호하는 검색엔진에 도움을 청한다. 물론, &quot;python csv&quot;에 대한 검색결과는 <a href="https://docs.python.org/2/library/csv.html"><code>csv</code> 라이브러리</a>가 나오고, 표준 파이썬 배포판의 일부이기도 하다. 라이브러리 문서에 일부 예제가 포함되어 있다. 몇번 실험을 한 뒤에, 다음과 같은 결과가 나오게 된다:</p>
 <pre class="{.python"><code># read-fields.py
-# Make sure we can read the fields from a CSV file.
+# CSV 파일에서 필드값을 제대로 읽어 오는지 확인한다.
 
 import sys
 import csv
@@ -67,33 +83,33 @@ reader = csv.reader(raw);
 for line in reader:
     print line
 raw.close()</code></pre>
-<p>This program starts by opening the bibliography file (again, we'll pass its name as the first command-line argument). It then calls <code>csv.reader</code> to create a wrapper around the file. When the basic file object created by <code>open</code> reads a line at a time, the wrapper created by <code>csv.reader</code> breaks that line into fields at the right places. It knows how to handle commas embedded in fields, special characters, and a bunch of other things that we don't want to have to worry about.</p>
-<p>To check that it's working correctly, we just print out each line after it has been processed by the CSV reader. Its first few lines of output are:</p>
+<p>작성한 프로그램은 참고문헌 파일을 열어서 시작한다(다시 한번, 첫번째 명령-라인 인자로 파일명을 넘긴다) 그리고 나서, <code>csv.reader</code> 메쏘드를 호출해서 파일주위에 래퍼를 생성한다. <code>open</code>으로 생성된 기본 파일 객체가 한번에 한줄씩 읽어올 때, <code>csv.reader</code>에 의해서 생성된 래퍼가 해당 라인을 올바른 지점에서 필드로 쪼갠다. <code>csv.reader</code>는 해당 필드에 내장된 콤마, 특수문자, 신경쓰지 않아도 되는 다른 엄청난 것에 대해 어떻게 처리하는지 알고 있다.</p>
+<p>올바르게 동작하는지 점검하려면, <code>csv.reader</code>에 의한 처리가 끝난 후에 각 줄을 출력하면 된다. 출력결과 중 첫 몇줄이 다음에 나와 있다:</p>
 <pre class="input"><code>$ python code/read-fields.py data/bibliography.csv | head -5</code></pre>
 <pre class="output"><code>[&#39;8SW85SQM&#39;, &#39;journalArticle&#39;, &#39;2013&#39;, &#39;McClelland, James L&#39;, &#39;Incorporating Rapid Neocortical Learning of New Schema-Consistent Information Into Complementary Learning Systems Theory.&#39;, &#39;J Exp Psychol Gen&#39;, &#39;&#39;, &#39;1939-2222&#39;, &#39;&#39;, &#39;http://www.biomedsearch.com/nih/Incorporating-Rapid-Neocortical-Learning-New/23978185.html&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]
 [&#39;85QV9X5F&#39;, &#39;journalArticle&#39;, &#39;1995&#39;, &quot;McClelland, J. L.; McNaughton, B. L.; O&#39;Reilly, R. C.&quot;, &#39;Why There are Complementary Learning Systems in the Hippocampus and Neocortex: Insights from the Successes and Failures of Connectionist Models of Learning and Memory&#39;, &#39;Psychological Review&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]
 [&#39;Z4X6DT6N&#39;, &#39;journalArticle&#39;, &#39;1990&#39;, &#39;Ratcliff, R.&#39;, &#39;Connectionist models of recognition memory: constraints imposed by learning and forgetting functions.&#39;, &#39;Psychological review&#39;, &#39;&#39;, &#39;0033-295X&#39;, &#39;&#39;, &#39;http://view.ncbi.nlm.nih.gov/pubmed/2186426&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]
 [&#39;F5DGU3Q4&#39;, &#39;bookSection&#39;, &#39;1989&#39;, &#39;McCloskey, M.; Cohen, N. J.&#39;, &#39;Catastrophic Interference in Connectionist Networks: The Sequential Learning Problem&#39;, &#39;The Psychology of Learning and Motivation, Vol. 24&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]
 [&#39;PNGQMCP5&#39;, &#39;conferencePaper&#39;, &#39;2006&#39;, &#39;Bucilu\xc7\x8e, Cristian; Caruana, Rich; Niculescu-Mizil, Alexandru&#39;, &#39;Model compression&#39;, &#39;Proceedings of the 12th ACM SIGKDD international conference on Knowledge discovery and data mining&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]</code></pre>
-<p>(Notice that we run the program's output through <code>head</code> to only display the first few lines rather than scrolling back through its output.) This is exactly what we need: the key is in the first element of each list, and the authors are all together in the fourth. Let's modify the program to print out just those two fields:</p>
-<pre class="sourceCode python"><code class="sourceCode python"><span class="co"># display-fields.py</span>
-<span class="co"># Print the key and all the authors</span>
+<p>(프로그램 출력결과를 <code>head</code> 명령어로 실행해서 출력결과를 스크롤해서 다시 위로 올라가기 보다 첫 몇줄만 화면에 출력함에 주목한다.) 상기 결과는 정확하게 필요한 결과다: 키값이 각 리스트 첫번째 구성요소로 있고, 저자는 모두 네번째에 몰려있따. 프로그램을 변경해서, 단지 두 필드만 출력하게 변경하자:</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co"># display-fields.py</span>
+<span class="co"># 키값과 저자 모두를 화면에 출력한다.</span>
 
-<span class="ch">import</span> sys
-<span class="ch">import</span> csv
+<span class="im">import</span> sys
+<span class="im">import</span> csv
 
-raw = <span class="dt">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
-reader = csv.reader(raw);
-<span class="kw">for</span> line in reader:
-    <span class="dt">print</span> line[<span class="dv">0</span>], line[<span class="dv">3</span>]
-raw.close()</code></pre>
-<p>Its output is:</p>
+raw <span class="op">=</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
+reader <span class="op">=</span> csv.reader(raw)<span class="op">;</span>
+<span class="cf">for</span> line <span class="op">in</span> reader:
+    <span class="bu">print</span> line[<span class="dv">0</span>], line[<span class="dv">3</span>]
+raw.close()</code></pre></div>
+<p>출력결과는 다음과 같다:</p>
 <pre class="output"><code>8SW85SQM McClelland, James L
 85QV9X5F McClelland, J. L.; McNaughton, B. L.; O&#39;Reilly, R. C.
 Z4X6DT6N Ratcliff, R.
 F5DGU3Q4 McCloskey, M.; Cohen, N. J.
 PNGQMCP5 Buciluǎ, Cristian; Caruana, Rich; Niculescu-Mizil, Alexandru</code></pre>
-<p>The last step is to turn lines with multiple authors into multiple lines, each with a single author. This is the right time to use <code>str.split</code>: the authors' names are separated by semi-colons, so we can break each list of authors on those and use another loop to print the results one by one:</p>
+<p>마지막 단계는 저자 다수를 갖는 행을 복수개 행으로 단일저자가 한줄에 나타나도록 변경한다. 이번이 <code>str.split</code> 메쏘드를 사용할 때다: 저자명이 세미콜론으로 구분되어 있어서, 저자 목록을 각 저자별로 나눌 수 있다. 또다른 루프를 사용해서 하나씩 결과를 화면에 출력한다:</p>
 <pre class="input"><code>$ python code/display-authors-1.py data/bibliography.csv | head -10</code></pre>
 <pre class="output"><code>8SW85SQM McClelland, James L
 85QV9X5F McClelland, J. L.
@@ -105,20 +121,20 @@ F5DGU3Q4  Cohen, N. J.
 PNGQMCP5 Buciluǎ, Cristian
 PNGQMCP5  Caruana, Rich
 PNGQMCP5  Niculescu-Mizil, Alexandru</code></pre>
-<p>That's close to what we want, but not quite right: since authors' names are actually separated by a semi-colon and a space, and we're only splitting on semi-colons, the second and subsequent name on each line comes out with an unwanted space at the front. What happens if we try to split on a semi-colon plus a space?</p>
-<pre class="sourceCode python"><code class="sourceCode python"><span class="co"># display-authors-2.py</span>
-<span class="co"># Print (key, author) pairs.</span>
+<p>이제 원하는 바에 가까워졌다. 하지만, 꼭 그렇지는 않다; 저자명은 실제로 세미콜론과 공백으로 구분되는데 세미콜론만으로 구분했기 때문에, 각 줄마다 두번째와 이어진 명칭에 원치않는 공백이 앞에 온다. 세미콜론과 공백으로 쪼개면 어떻게 될까?</p>
+<div class="sourceCode"><pre class="sourceCode python"><code class="sourceCode python"><span class="co"># display-authors-2.py</span>
+<span class="co"># (키값, 저자명) 짝을 화면에 출력한다.</span>
 
-<span class="ch">import</span> sys
-<span class="ch">import</span> csv
+<span class="im">import</span> sys
+<span class="im">import</span> csv
 
-raw = <span class="dt">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
-reader = csv.reader(raw);
-<span class="kw">for</span> line in reader:
-    key, authors = line[<span class="dv">0</span>], line[<span class="dv">3</span>]
-    <span class="kw">for</span> auth in authors.split(<span class="st">&#39;; &#39;</span>): <span class="co"># semi-colon plus space instead of semi-colon</span>
-        <span class="dt">print</span> key, auth
-raw.close()</code></pre>
+raw <span class="op">=</span> <span class="bu">open</span>(sys.argv[<span class="dv">1</span>], <span class="st">&#39;r&#39;</span>)
+reader <span class="op">=</span> csv.reader(raw)<span class="op">;</span>
+<span class="cf">for</span> line <span class="op">in</span> reader:
+    key, authors <span class="op">=</span> line[<span class="dv">0</span>], line[<span class="dv">3</span>]
+    <span class="cf">for</span> auth <span class="op">in</span> authors.split(<span class="st">&#39;; &#39;</span>): <span class="co"># 세미콜론 대신에, 세미콜론과 공백 사용</span>
+        <span class="bu">print</span> key, auth
+raw.close()</code></pre></div>
 <pre class="output"><code>8SW85SQM McClelland, James L
 85QV9X5F McClelland, J. L.
 85QV9X5F McNaughton, B. L.
@@ -129,7 +145,7 @@ F5DGU3Q4 Cohen, N. J.
 PNGQMCP5 Buciluǎ, Cristian
 PNGQMCP5 Caruana, Rich
 PNGQMCP5 Niculescu-Mizil, Alexandru</code></pre>
-<p>And that's that: the first step of our data extraction is done. Since we've achieved something useful, we save it for posterity:</p>
+<p>그리고나면 작업완료: 데이터 추출 첫번째 작업 완료. 뭔가 유용한 것을 얻었기 때문에, 후세를 위해서 저장한자:</p>
 <pre class="input"><code>$ git init .</code></pre>
 <pre class="output"><code>Initialized empty Git repository in /Users/aturing/lessons/capstone-novice-spreadsheet-biblio/.git</code></pre>
 <pre class="input"><code>$ git add -A
@@ -156,25 +172,34 @@ Changes to be committed:
  create mode 100644 code/display-fields.py
  create mode 100644 code/read-fields.py
  create mode 100644 data/bibliography.csv</code></pre>
-<div id="checking-assumptions" class="challenge">
-<h2>Checking Assumptions</h2>
-<p>You suspect that a handful of authors' names are separated only by a semi-colon rather than by a semi-colon and space. What Unix shell command or commands could you use to check for this?</p>
+<section class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="가정사항-점검"><span class="glyphicon glyphicon-pencil"></span>가정사항 점검</h2>
 </div>
-<div id="safer-splitting" class="challenge">
-<h2>Safer Splitting</h2>
-<p>Suppose you find that some authors' names are separated only by a semi-colon rather than by a semi-colon and a space. Modify the program so that it splits the author field on semi-colons, then strips unwanted spaces from individual authors' names while printing.</p>
+<div class="panel-body">
+<p>세미콜론과 공백이 아닌 세미콜론만으로 저자명 일부로 구분된다는 의구심이 있다. 이런 사항을 점검하는데 사용할 유닉스 쉘 명령어가 무얼까?</p>
 </div>
+</section>
+<section class="challenge panel panel-success">
+<div class="panel-heading">
+<h2 id="더-안전한-필드-쪼개기"><span class="glyphicon glyphicon-pencil"></span>더 안전한 필드 쪼개기</h2>
+</div>
+<div class="panel-body">
+<p>저자명 일부가 세미콜론과 공백이 아닌 세미콜론만으로 구부된다는 것을 알게됐다고 가정하자. 프로그램을 변경해서, 세미콜론으로 저자명 필드를 쪼개고 나서, 출력하는 동안에 원치않는 공백을 개별 저자명에서 벗겨내도록 하시오.</p>
+</div>
+</section>
         </div>
       </div>
-      <div class="footer">
-        <a class="label swc-blue-bg" href="mailto:admin@software-carpentry.org">Email</a>
-        <a class="label swc-blue-bg" href="http://github.com/swcarpentry">GitHub</a>
-        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
-        <a class="bugreport label swc-blue-bg" href="mailto:admin@software-carpentry.org?subject=bug%20in%20{{page.path}}">Bug Report</a>
+      </article>
+      <div class="footer">
+        <a class="label swc-blue-bg" href="http://xwmooc.net">xwMOOC</a>
+        <a class="label swc-blue-bg" href="https://github.com/statkclee/raspberry-pi">Source</a>
+        <a class="label swc-blue-bg" href="mailto:i@xwmooc.net">Contact</a>
+        <a class="label swc-blue-bg" href="LICENSE.html">License</a>
       </div>
     </div>
-    <!-- Javascript placed at the end of the document so the pages load faster -->
-    <script src="http://software-carpentry.org/v5/js/jquery-1.9.1.min.js"></script>
-    <script src="http://software-carpentry.org/v5/js/bootstrap/bootstrap.min.js"></script>
+    <!-- Javascript placed at the end of the document so the pages load faster -->
+    <script src="http://software-carpentry.org/v5/js/jquery-1.9.1.min.js"></script>
+    <script src="css/bootstrap/bootstrap-js/bootstrap.js"></script>
   </body>
 </html>
