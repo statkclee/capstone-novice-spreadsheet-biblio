@@ -194,7 +194,7 @@ Niculescu-Mizil, Alexandru|Caruana, Rich
 Rigamonti, Roberto|Fua, Pascal
 Rigamonti, Roberto|Lepetit, Vincent
 Sironi, Amos|Fua, Pascal</code></pre>
-<p>(We use <code>a.author &gt; b.author</code> to ensure that each distinct pair of authors only shows up once.) What if we want to know how often different pairs of people have written together?</p>
+<p>(<code>a.author &gt; b.author</code> 을 사용하게 되면 왜 완전히 다른 저자명 짝이 한번만 나오게 한다.) 다른 저자 짝이 얼마나 자주 함께 논문을 작성했는지 알고자 한다면 어떨까?</p>
 <div class="sourceCode"><pre class="sourceCode sql"><code class="sourceCode sql"><span class="kw">select</span> a.author, b.author, <span class="fu">count</span>(*)
 <span class="kw">from</span> <span class="kw">data</span> a <span class="kw">join</span> <span class="kw">data</span> b
 <span class="kw">on</span> a.key=b.key <span class="kw">and</span> a.author &gt; b.author
